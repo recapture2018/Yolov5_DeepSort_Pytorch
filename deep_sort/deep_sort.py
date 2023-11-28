@@ -24,7 +24,7 @@ class DeepSort(object):
         # models trained on: market1501, dukemtmcreid and msmt17
         if is_model_in_factory(model):
             # download the model
-            model_path = join('deep_sort/deep/checkpoint', model + '.pth')
+            model_path = join('deep_sort/deep/checkpoint', f'{model}.pth')
             if not file_exists(model_path):
                 gdown.download(get_model_link(model), model_path, quiet=False)
 
@@ -34,18 +34,17 @@ class DeepSort(object):
                 model_path=model_path,
                 device=str(device)
             )
+        elif is_model_type_in_model_path(model):
+            model_name = get_model_type(model)
+            self.extractor = FeatureExtractor(
+                model_name=model_name,
+                model_path=model,
+                device=str(device)
+            )
         else:
-            if is_model_type_in_model_path(model):
-                model_name = get_model_type(model)
-                self.extractor = FeatureExtractor(
-                    model_name=model_name,
-                    model_path=model,
-                    device=str(device)
-                )
-            else:
-                print('Cannot infere model name from provided DeepSort path, should be one of the following:')
-                show_supported_models()
-                exit()
+            print('Cannot infere model name from provided DeepSort path, should be one of the following:')
+            show_supported_models()
+            exit()
 
         max_cosine_distance = max_dist
         metric = NearestNeighborDistanceMetric(
@@ -83,7 +82,7 @@ class DeepSort(object):
             track_id = track.track_id
             class_id = track.class_id
             outputs.append(np.array([x1, y1, x2, y2, track_id, class_id], dtype=np.int))
-        if len(outputs) > 0:
+        if outputs:
             outputs = np.stack(outputs, axis=0)
         return outputs
 
@@ -131,9 +130,7 @@ class DeepSort(object):
 
         t = x1
         l = y1
-        w = int(x2 - x1)
-        h = int(y2 - y1)
-        return t, l, w, h
+        return t, l, int(x2 - t), int(y2 - l)
 
     def _get_features(self, bbox_xywh, ori_img):
         im_crops = []
@@ -141,8 +138,4 @@ class DeepSort(object):
             x1, y1, x2, y2 = self._xywh_to_xyxy(box)
             im = ori_img[y1:y2, x1:x2]
             im_crops.append(im)
-        if im_crops:
-            features = self.extractor(im_crops)
-        else:
-            features = np.array([])
-        return features
+        return self.extractor(im_crops) if im_crops else np.array([])

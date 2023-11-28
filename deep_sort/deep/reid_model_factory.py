@@ -112,29 +112,17 @@ def get_model_link(model):
 
 
 def is_model_in_factory(model):
-    if model in __trained_urls:
-        return True
-    else:
-        return False
+    return model in __trained_urls
 
 
 def is_model_in_model_types(model):
-    if model in __model_types:
-        return True
-    else:
-        return False
+    return model in __model_types
 
 
 def get_model_type(model):
-    for x in __model_types:
-        if x in model:
-            return x
-    return None
+    return next((x for x in __model_types if x in model), None)
 
 
 def is_model_type_in_model_path(model):
-    if get_model_type(model) is None:
-        return False
-    else:
-        return True
+    return get_model_type(model) is not None
 
